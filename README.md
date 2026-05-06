@@ -1,172 +1,88 @@
-<div align="center">
-  
-<img src="logo.svg" width="10%">
+# AskRedditAI
 
-# YARS (Yet Another Reddit Scraper)
+AskRedditAI is a full-stack app that fetches Reddit context and uses an LLM to generate grounded answers.
 
-[![GitHub stars](https://img.shields.io/github/stars/datavorous/yars.svg?style=social&label=Stars&style=plastic)](https://github.com/datavorous/yars/stargazers)<br>
+- Backend: FastAPI (`src/`) for Reddit retrieval + LLM answer generation.
+- Frontend: React + Vite + MUI (`AskRedditAI/`) with landing and chat pages.
 
-</div>
+## Project Structure
 
-YARS is a Python package designed to simplify the process of scraping Reddit for posts, comments, user data, and other media. The package also includes utility functions. It is built using **Python** and relies on the **requests** module for fetching data from Reddit’s public API. The scraper uses simple `.json` requests, avoiding the need for official Reddit API keys, making it lightweight and easy to use.
+- `src/` FastAPI backend
+- `AskRedditAI/` Vite React frontend
 
-## Features
+## Backend Setup (FastAPI)
 
-- **Reddit Search**: Search Reddit for posts using a keyword query.
-- **Post Scraping**: Scrape post details, including title, body, and comments.
-- **User Data Scraping**: Fetch recent activity (posts and comments) of a Reddit user.
-- **Subreddit Posts Fetching**: Retrieve posts from specific subreddits with flexible options for category and time filters.
-- **Image Downloading**: Download images from posts.
-- **Results Display**: Utilize `Pygments` for colorful display of JSON-formatted results.
+1. Install dependencies (from repo root):
 
-> [!WARNING]
-> Use with rotating proxies, or Reddit might gift you with an IP ban.  
-> I could extract max 2552 posts at once from 'r/all' using this.  
-> [Here](https://files.catbox.moe/zdra2i.json) is a **7.1 MB JSON** file containing the top 100 posts from 'r/nosleep', which included post titles, body text, all comments and their replies, post scores, time of upload etc.
-
-## Dependencies
-
-- `requests`
-- `Pygments`
-
-## Installation
-
-1. Clone the repository:
-
-   ```
-   git clone https://github.com/datavorous/YARS.git
-   ```
-   Navigate inside the ```src``` folder.
-
-2. Install ```uv``` (if not already installed):
-
-   ```
-   pip install uv
-   ```
-
-3. Run the application:
-   ```
-   uv run example/example.py
-   ```
-   It'll setup the virtual env, install the necessary packages and run the ```example.py``` program.
-
-## Usage
-
-We will use the following Python script to demonstrate the functionality of the scraper. The script includes:
-
-- Searching Reddit
-- Scraping post details
-- Fetching user data
-- Retrieving subreddit posts
-- Downloading images from posts
-
-#### Code Overview
-
-```python
-from yars import YARS
-from utils import display_results, download_image
-
-miner = YARS()
+```bash
+uv sync --project src
 ```
 
-#### Step 1: Searching Reddit
+2. Configure backend env in root `.env`:
 
-The `search_reddit` method allows you to search Reddit using a query string. Here, we search for posts containing "OpenAI" and limit the results to 3 posts. The `display_results` function is used to present the results in a formatted way.
-
-```python
-search_results = miner.search_reddit("OpenAI", limit=3)
-display_results(search_results, "SEARCH")
+```bash
+GROK_API_KEY=your_groq_api_key
+# Optional
+GROK_MODEL=llama-3.3-70b-versatile
+# Optional: comma-separated frontend origins
+CORS_ALLOW_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 ```
 
-#### Step 2: Scraping Post Details
+3. Run backend:
 
-Next, we scrape details of a specific Reddit post by passing its permalink. If the post details are successfully retrieved, they are displayed using `display_results`. Otherwise, an error message is printed.
-
-```python
-permalink = "https://www.reddit.com/r/getdisciplined/comments/1frb5ib/what_single_health_test_or_practice_has/".split('reddit.com')[1]
-post_details = miner.scrape_post_details(permalink)
-if post_details:
-    display_results(post_details, "POST DATA")
-else:
-    print("Failed to scrape post details.")
+```bash
+uv run --project src uvicorn main:app --app-dir src --host 0.0.0.0 --port 8005 --reload
 ```
 
-#### Step 3: Fetching User Data
+Backend base URL: `http://localhost:8005`
 
-We can also retrieve a Reddit user’s recent activity (posts and comments) using the `scrape_user_data` method. Here, we fetch data for the user `iamsecb` and limit the results to 2 items.
+## Frontend Setup (React + Vite)
 
-```python
-user_data = miner.scrape_user_data("iamsecb", limit=2)
-display_results(user_data, "USER DATA")
+1. Go to frontend directory:
+
+```bash
+cd AskRedditAI
 ```
 
-#### Step 4: Fetching Subreddit Posts
+2. Install dependencies:
 
-The `fetch_subreddit_posts` method retrieves posts from a specified subreddit. In this example, we fetch 11 top posts from the "generative" subreddit from the past week.
-
-```python
-subreddit_posts = miner.fetch_subreddit_posts("generative", limit=11, category="top", time_filter="week")
-display_results(subreddit_posts, "EarthPorn SUBREDDIT New Posts")
+```bash
+npm install
 ```
 
-#### Step 5: Downloading Images
+3. Create env file:
 
-For the posts retrieved from the subreddit, we try to download their associated images. The `download_image` function is used for this. If the post doesn't have an `image_url`, the thumbnail URL is used as a fallback.
-
-```python
-for z in range(3):
-    try:
-        image_url = subreddit_posts[z]["image_url"]
-    except:
-        image_url = subreddit_posts[z]["thumbnail_url"]
-    download_image(image_url)
+```bash
+cp .env.example .env
 ```
 
-### Complete Code Example
+4. Set API endpoint in `AskRedditAI/.env`:
 
-```python
-from yars import YARS
-from utils import display_results, download_image
-
-miner = YARS()
-
-# Search for posts related to "OpenAI"
-search_results = miner.search_reddit("OpenAI", limit=3)
-display_results(search_results, "SEARCH")
-
-# Scrape post details using its permalink
-permalink = "https://www.reddit.com/r/getdisciplined/comments/1frb5ib/what_single_health_test_or_practice_has/".split('reddit.com')[1]
-post_details = miner.scrape_post_details(permalink)
-if post_details:
-    display_results(post_details, "POST DATA")
-else:
-    print("Failed to scrape post details.")
-
-# Fetch recent activity of user "iamsecb"
-user_data = miner.scrape_user_data("iamsecb", limit=2)
-display_results(user_data, "USER DATA")
-
-# Fetch top posts from the subreddit "generative" from the past week
-subreddit_posts = miner.fetch_subreddit_posts("generative", limit=11, category="top", time_filter="week")
-display_results(subreddit_posts, "EarthPorn SUBREDDIT New Posts")
-
-# Download images from the fetched posts
-for z in range(3):
-    try:
-        image_url = subreddit_posts[z]["image_url"]
-    except:
-        image_url = subreddit_posts[z]["thumbnail_url"]
-    download_image(image_url)
+```bash
+VITE_API_BASE_URL=http://localhost:8005/api/v1
 ```
 
-You can now use these techniques to explore and scrape data from Reddit programmatically.
+5. Start frontend:
 
-## Contributing
+```bash
+npm run dev
+```
 
-Contributions are welcome! For feature requests, bug reports, or questions, please open an issue. If you would like to contribute code, please open a pull request with your changes.
+Frontend URL: `http://localhost:5173`
 
-### Our Notable Contributors
+## API Endpoints
 
-<a href="https://github.com/datavorous/yars/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=datavorous/yars" />
+- `GET /health`
+- `GET /api/v1/search?query=...&subreddit=...&limit=5`
+- `GET /api/v1/search/answer?query=...&subreddit=...&limit=5`
 
+### Example
+
+```bash
+curl "http://localhost:8005/api/v1/search/answer?query=how%20to%20learn%20algotrading&subreddit=algotrading&limit=5"
+```
+
+## Notes
+
+- If you call backend directly from frontend (`localhost:5173` -> `localhost:8005`), CORS must allow the frontend origin.
+- The backend already supports CORS origins via `CORS_ALLOW_ORIGINS`.
