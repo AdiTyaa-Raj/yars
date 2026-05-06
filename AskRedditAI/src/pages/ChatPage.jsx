@@ -19,6 +19,7 @@ import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
 import { Link as RouterLink } from "react-router-dom";
 
+import AnswerMarkdown from "../components/AnswerMarkdown";
 import ContextPostCard from "../components/ContextPostCard";
 import { fetchRedditAnswer } from "../services/api";
 
@@ -161,9 +162,7 @@ function ChatPage() {
                   <Typography variant="subtitle2" color="text.secondary">
                     LLM Answer
                   </Typography>
-                  <Typography variant="h6" sx={{ fontSize: "1.1rem", lineHeight: 1.6 }}>
-                    {result.answer}
-                  </Typography>
+                  <AnswerMarkdown answer={result.answer} />
                   <Typography variant="caption" color="text.secondary">
                     Query: {result.query} • subreddit: r/{result.subreddit}
                   </Typography>
