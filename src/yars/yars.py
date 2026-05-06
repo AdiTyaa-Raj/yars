@@ -56,7 +56,8 @@ class YARS:
                 {
                     "title": post_data["title"],
                     "link": f"https://www.reddit.com{post_data['permalink']}",
-                    "description": post_data.get("selftext", "")[:269],
+                    "description": post_data.get("selftext", "")[:999],
+                    "author": post_data.get("author", ""),
                 }
             )
         logging.info("Search Results Retrned %d Results", len(results))
