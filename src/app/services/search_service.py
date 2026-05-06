@@ -24,6 +24,16 @@ ANSWER_SYSTEM_PROMPT = (
 def search_subreddit_posts(query: str, subreddit: str, limit: int = 5) -> list[dict]:
     client = YARS()
     posts = client.search_subreddit(subreddit=subreddit, query=query, limit=limit, sort="top")
+    return _hydrate_posts_with_top_comments(client=client, posts=posts)
+
+
+def search_reddit_posts(query: str, limit: int = 5) -> list[dict]:
+    client = YARS()
+    posts = client.search_reddit(query=query, limit=limit)
+    return _hydrate_posts_with_top_comments(client=client, posts=posts)
+
+
+def _hydrate_posts_with_top_comments(client: YARS, posts: list[dict]) -> list[dict]:
     filtered_posts: list[dict] = []
 
     for post in posts:
@@ -56,15 +66,61 @@ def search_subreddit_posts(query: str, subreddit: str, limit: int = 5) -> list[d
 
 
 def answer_query_from_subreddit_context(query: str, subreddit: str, limit: int = 5) -> dict:
-    context_posts = search_subreddit_posts(query=query, subreddit=subreddit, limit=limit)
+    context_posts = _with_subreddit_label(
+        posts=search_subreddit_posts(query=query, subreddit=subreddit, limit=limit),
+        subreddit=subreddit,
+    )
     context_text = _build_context_text(context_posts)
     answer = _generate_answer_with_llm(query=query, context=context_text)
 
     return {
         "query": query,
         "subreddit": subreddit,
+        "subreddits": [subreddit],
         "answer": answer,
         "context": context_posts,
+        "context_by_subreddit": {subreddit: context_posts},
+    }
+
+
+def answer_query_from_subreddits_context(query: str, subreddits: list[str], limit: int = 5) -> dict:
+    context_by_subreddit: dict[str, list[dict]] = {}
+    merged_context: list[dict] = []
+
+    for subreddit in subreddits:
+        subreddit_posts = _with_subreddit_label(
+            posts=search_subreddit_posts(query=query, subreddit=subreddit, limit=limit),
+            subreddit=subreddit,
+        )
+        context_by_subreddit[subreddit] = subreddit_posts
+        merged_context.extend(subreddit_posts)
+
+    context_text = _build_context_text(merged_context)
+    answer = _generate_answer_with_llm(query=query, context=context_text)
+
+    response: dict = {
+        "query": query,
+        "subreddits": subreddits,
+        "answer": answer,
+        "context": merged_context,
+        "context_by_subreddit": context_by_subreddit,
+    }
+    if len(subreddits) == 1:
+        response["subreddit"] = subreddits[0]
+    return response
+
+
+def answer_query_from_reddit_context(query: str, limit: int = 5) -> dict:
+    context_posts = search_reddit_posts(query=query, limit=limit)
+    context_text = _build_context_text(context_posts)
+    answer = _generate_answer_with_llm(query=query, context=context_text)
+
+    return {
+        "query": query,
+        "subreddits": [],
+        "answer": answer,
+        "context": context_posts,
+        "context_by_subreddit": {},
     }
 
 
@@ -87,6 +143,7 @@ def _build_context_text(posts: list[dict]) -> str:
         context_items.append(
             {
                 "index": index,
+                "subreddit": post.get("subreddit", ""),
                 "title": post.get("title", ""),
                 "link": post.get("link", ""),
                 "description": post.get("description", ""),
@@ -94,6 +151,10 @@ def _build_context_text(posts: list[dict]) -> str:
             }
         )
     return json.dumps(context_items, ensure_ascii=True)
+
+
+def _with_subreddit_label(posts: list[dict], subreddit: str) -> list[dict]:
+    return [{**post, "subreddit": subreddit} for post in posts]
 
 
 def _generate_answer_with_llm(query: str, context: str) -> str:

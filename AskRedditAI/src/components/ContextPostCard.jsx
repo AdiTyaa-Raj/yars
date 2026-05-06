@@ -20,6 +20,7 @@ function ContextPostCard({ post, index }) {
         <Stack spacing={0.5} sx={{ width: "100%" }}>
           <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
             <Chip label={`Source [${index}]`} size="small" color="secondary" variant="outlined" />
+            {post.subreddit ? <Chip label={`r/${post.subreddit}`} size="small" color="primary" variant="outlined" /> : null}
             <Typography variant="h6" sx={{ fontSize: "1rem" }}>
               {post.title || "Untitled post"}
             </Typography>

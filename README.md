@@ -75,11 +75,16 @@ Frontend URL: `http://localhost:5173`
 - `GET /health`
 - `GET /api/v1/search?query=...&subreddit=...&limit=5`
 - `GET /api/v1/search/answer?query=...&subreddit=...&limit=5`
+- `GET /api/v1/search/answer?query=...&subreddits=programming&subreddits=algotrading&limit=5`
 
 ### Example
 
 ```bash
 curl "http://localhost:8005/api/v1/search/answer?query=how%20to%20learn%20algotrading&subreddit=algotrading&limit=5"
+```
+
+```bash
+curl "http://localhost:8005/api/v1/search/answer?query=how%20to%20learn%20algotrading&subreddits=algotrading&subreddits=quant&limit=5"
 ```
 
 ## Notes

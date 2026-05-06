@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
+import Autocomplete, { createFilterOptions } from "@mui/material/Autocomplete";
 import {
-  Alert,
   Box,
+  Alert,
   Button,
   Chip,
   CircularProgress,
@@ -22,23 +23,42 @@ import { Link as RouterLink } from "react-router-dom";
 import AnswerMarkdown from "../components/AnswerMarkdown";
 import ContextPostCard from "../components/ContextPostCard";
 import { fetchRedditAnswer } from "../services/api";
+import subreddits from "../../subreddits.json";
 
 const starterPrompts = [
-  "best remote jobs for developers",
-  "how to negotiate software engineer salary",
-  "what to learn after React",
-  "effective coding interview prep",
+
+  "which developer skill should I learn next",
+  "how to choose between frontend, backend, and devops",
+  "best way to build real-world coding projects",
 ];
+const ALL_SUBREDDITS_OPTION = "__ALL_SUBREDDITS__";
 
 function ChatPage() {
   const [query, setQuery] = useState("");
-  const [subreddit, setSubreddit] = useState("programming");
+  const [selectedSubreddits, setSelectedSubreddits] = useState([ALL_SUBREDDITS_OPTION]);
   const [limit, setLimit] = useState(5);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState(null);
 
-  const canSubmit = useMemo(() => query.trim().length > 0 && subreddit.trim().length > 0, [query, subreddit]);
+  const subredditOptions = useMemo(
+    () => [
+      ALL_SUBREDDITS_OPTION,
+      ...subreddits.filter((subredditName) => typeof subredditName === "string" && subredditName.trim().length > 0),
+    ],
+    []
+  );
+  const filterSubredditOptions = useMemo(
+    () =>
+      createFilterOptions({
+        limit: 60,
+        ignoreAccents: true,
+        ignoreCase: true,
+        trim: true,
+      }),
+    []
+  );
+  const canSubmit = useMemo(() => query.trim().length > 0 && selectedSubreddits.length > 0, [query, selectedSubreddits]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -50,7 +70,11 @@ function ChatPage() {
     setError("");
 
     try {
-      const payload = await fetchRedditAnswer({ query, subreddit, limit });
+      const payload = await fetchRedditAnswer({
+        query,
+        subreddits: selectedSubreddits.includes(ALL_SUBREDDITS_OPTION) ? [] : selectedSubreddits,
+        limit,
+      });
       setResult(payload);
     } catch (submitError) {
       setResult(null);
@@ -58,6 +82,32 @@ function ChatPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const getSubredditOptionLabel = (option) =>
+    option === ALL_SUBREDDITS_OPTION ? "All" : `r/${option}`;
+
+  const handleSubredditChange = (_, nextValue) => {
+    const deduped = [...new Set(nextValue)];
+    const hasAll = deduped.includes(ALL_SUBREDDITS_OPTION);
+    const specificSubreddits = deduped.filter((value) => value !== ALL_SUBREDDITS_OPTION);
+
+    if (hasAll && specificSubreddits.length > 0) {
+      setSelectedSubreddits(specificSubreddits);
+      return;
+    }
+
+    if (!hasAll && specificSubreddits.length === 0) {
+      setSelectedSubreddits([ALL_SUBREDDITS_OPTION]);
+      return;
+    }
+
+    if (hasAll) {
+      setSelectedSubreddits([ALL_SUBREDDITS_OPTION]);
+      return;
+    }
+
+    setSelectedSubreddits(specificSubreddits);
   };
 
   return (
@@ -96,13 +146,25 @@ function ChatPage() {
                 fullWidth
               />
               <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-                <TextField
-                  label="Subreddit"
-                  placeholder="programming"
-                  value={subreddit}
-                  onChange={(event) => setSubreddit(event.target.value)}
-                  required
+                <Autocomplete
+                  multiple
+                  options={subredditOptions}
+                  value={selectedSubreddits}
+                  onChange={handleSubredditChange}
+                  getOptionLabel={getSubredditOptionLabel}
+                  filterOptions={filterSubredditOptions}
+                  filterSelectedOptions
+                  autoHighlight
                   fullWidth
+                  disableCloseOnSelect
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Subreddits"
+                      placeholder="Search and select subreddits"
+                      helperText="Default is All. Choosing any subreddit removes All."
+                    />
+                  )}
                 />
                 <FormControl sx={{ minWidth: 130 }}>
                   <InputLabel id="limit-select-label">Post limit</InputLabel>
@@ -127,7 +189,7 @@ function ChatPage() {
               </Stack>
               <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} justifyContent="space-between" alignItems={{ xs: "stretch", sm: "center" }}>
                 <Typography variant="body2" color="text.secondary">
-                  Endpoint: <code>/api/v1/search/answer</code>
+
                 </Typography>
                 <Button type="submit" variant="contained" endIcon={<SendRoundedIcon />} disabled={!canSubmit || loading}>
                   {loading ? "Thinking..." : "Ask Reddit"}
@@ -164,7 +226,12 @@ function ChatPage() {
                   </Typography>
                   <AnswerMarkdown answer={result.answer} />
                   <Typography variant="caption" color="text.secondary">
-                    Query: {result.query} • subreddit: r/{result.subreddit}
+                    Query: {result.query} • subreddits:{" "}
+                    {Array.isArray(result.subreddits) && result.subreddits.length > 0
+                      ? result.subreddits.map((name) => `r/${name}`).join(", ")
+                      : result.subreddit
+                        ? `r/${result.subreddit}`
+                        : "n/a"}
                   </Typography>
                 </Stack>
               </Paper>
