@@ -1,0 +1,81 @@
+@import url("https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Space+Grotesk:wght@400;500;700&display=swap");
+
+:root {
+  --accent-peach: #ff6b35;
+  --accent-teal: #127475;
+  --bg-soft: #f6f8fb;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 10% 10%, rgba(255, 107, 53, 0.17), transparent 38%),
+    radial-gradient(circle at 92% 14%, rgba(18, 116, 117, 0.16), transparent 34%),
+    linear-gradient(140deg, #f6f8fb 0%, #eef2f9 100%);
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.app-shell {
+  position: relative;
+  overflow: hidden;
+  min-height: 100vh;
+}
+
+.glow-orb {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(18px);
+  opacity: 0.7;
+  animation: drift 10s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+.glow-orb-one {
+  width: 280px;
+  height: 280px;
+  top: -90px;
+  right: -70px;
+  background: linear-gradient(130deg, rgba(255, 107, 53, 0.35), rgba(255, 147, 104, 0.2));
+}
+
+.glow-orb-two {
+  width: 330px;
+  height: 330px;
+  left: -120px;
+  bottom: -140px;
+  background: linear-gradient(140deg, rgba(18, 116, 117, 0.3), rgba(77, 153, 154, 0.18));
+}
+
+.glow-orb-three {
+  width: 260px;
+  height: 260px;
+  right: -110px;
+  top: 30%;
+  background: linear-gradient(120deg, rgba(18, 116, 117, 0.28), rgba(255, 107, 53, 0.24));
+}
+
+.lift-card {
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.lift-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 28px rgba(20, 31, 46, 0.08);
+}
+
+@keyframes drift {
+  from {
+    transform: translateY(0px) translateX(0px);
+  }
+  to {
+    transform: translateY(10px) translateX(-8px);
+  }
+}
